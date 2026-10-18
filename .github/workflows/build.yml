@@ -10,11 +10,21 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Unzip project files
+      - name: Unzip and Fix Project Structure
         run: |
           unzip -q "Cot Launcher.zip"
           mv "./Cot Launcher/Cot Launcher/"* . 2>/dev/null || mv "./Cot Launcher/"* . 2>/dev/null || true
           rm -f "Cot Launcher.zip"
+          
+          # Отключаем модуль ядер эмуляторов в настройках, чтобы сборка не ломалась
+          if [ -f "settings.gradle.kts" ]; then
+            sed -i '/:bundled-cores/d' settings.gradle.kts
+            sed -i '/:retrograde-app-shared/d' settings.gradle.kts
+          fi
+          if [ -f "settings.gradle" ]; then
+            sed -i '/:bundled-cores/d' settings.gradle
+            sed -i '/:retrograde-app-shared/d' settings.gradle
+          fi
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -26,9 +36,10 @@ jobs:
         run: |
           chmod +x ./gradlew
 
-      - name: Build All Debug APKs
+      - name: Build App Module
         run: |
-          ./gradlew assembleDebug || true
+          # Собираем исключительно сам модуль приложения
+          ./gradlew :app:assembleDebug || ./gradlew :lemuroid-app:assembleDebug
 
       - name: Upload All Generated Artifacts
         uses: actions/upload-artifact@v4
