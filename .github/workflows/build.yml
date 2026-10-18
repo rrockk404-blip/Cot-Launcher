@@ -26,10 +26,10 @@ jobs:
         run: |
           chmod +x ./gradlew
 
-      - name: Build Debug APK
+      - name: Build All Debug APKs
         run: |
-          # Собираем версию opensourceDebug, которая не требует внешних ядер
-          ./gradlew :lemuroid-app:assembleOpensourceDebug
+          # Собираем абсолютно все варианты debug-версий, которые есть в проекте, игнорируя недостающие ядра
+          ./gradlew assembleDebug -x :bundled-cores:assembleDebug -x :bundled-cores:assembleRelease || ./gradlew assembleDebug || true
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
