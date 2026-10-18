@@ -1,46 +1,16 @@
-name: Unpack and Build APK
+name: Check ZIP Contents
 
 on:
   workflow_dispatch:
 
 jobs:
-  build:
+  check:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Unzip project files
+      - name: Show what is inside ZIP
         run: |
-          # Распаковываем файлы прямо в текущую папку без создания подпапок
-          unzip -j "Cot Launcher.zip" -d . || true
-          unzip "Cot Launcher.zip" -d . || true
-          
-          # Если файлы распаковались в подпапку, вытаскиваем их наружу
-          if [ ! -f "./gradlew" ]; then
-            mv Cot-Launcher/* . 2>/dev/null || true
-            mv Cot_Launcher/* . 2>/dev/null || true
-            mv "Cot Launcher"/* . 2>/dev/null || true
-          fi
-          
-          rm -f "Cot Launcher.zip"
-
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
-        with:
-          java-version: '17'
-          distribution: 'temurin'
-
-      - name: Make Gradle executable
-        run: |
-          chmod +x ./gradlew || true
-
-      - name: Build Debug APK
-        run: |
-          ./gradlew assembleDebug
-
-      - name: Upload APK Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: lemuroid-mod-apk
-          path: "**/build/outputs/apk/debug/*.apk"
+          echo "=== Список файлов в архиве ==="
+          unzip -l "Cot Launcher.zip"
