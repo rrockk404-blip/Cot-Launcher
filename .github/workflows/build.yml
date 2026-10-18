@@ -1,16 +1,17 @@
-name: Check ZIP Contents
+name: Find Gradlew
 
 on:
   workflow_dispatch:
 
 jobs:
-  check:
+  find:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Show what is inside ZIP
+      - name: Search for gradlew
         run: |
-          echo "=== Список файлов в архиве ==="
-          unzip -l "Cot Launcher.zip"
+          unzip -q "Cot Launcher.zip"
+          echo "=== Точное местоположение файла gradlew ==="
+          find . -name "gradlew"
