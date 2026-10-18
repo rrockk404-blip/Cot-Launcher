@@ -28,11 +28,12 @@ jobs:
 
       - name: Build All Debug APKs
         run: |
-          # Собираем абсолютно все варианты debug-версий, которые есть в проекте, игнорируя недостающие ядра
-          ./gradlew assembleDebug -x :bundled-cores:assembleDebug -x :bundled-cores:assembleRelease || ./gradlew assembleDebug || true
+          ./gradlew assembleDebug || true
 
-      - name: Upload APK Artifact
+      - name: Upload All Generated Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: lemuroid-mod-apk
-          path: "**/build/outputs/apk/**/*.apk"
+          path: |
+            **/build/outputs/**/*.apk
+            **/build/outputs/**/*.aab
