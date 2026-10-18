@@ -12,9 +12,18 @@ jobs:
 
       - name: Unzip project files
         run: |
-          unzip "Cot Launcher.zip" -d extracted_project
-          mv extracted_project/* .
-          rm -rf extracted_project "Cot Launcher.zip"
+          # Распаковываем файлы прямо в текущую папку без создания подпапок
+          unzip -j "Cot Launcher.zip" -d . || true
+          unzip "Cot Launcher.zip" -d . || true
+          
+          # Если файлы распаковались в подпапку, вытаскиваем их наружу
+          if [ ! -f "./gradlew" ]; then
+            mv Cot-Launcher/* . 2>/dev/null || true
+            mv Cot_Launcher/* . 2>/dev/null || true
+            mv "Cot Launcher"/* . 2>/dev/null || true
+          fi
+          
+          rm -f "Cot Launcher.zip"
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -23,14 +32,15 @@ jobs:
           distribution: 'temurin'
 
       - name: Make Gradle executable
-        run: chmod +x ./gradlew
+        run: |
+          chmod +x ./gradlew || true
 
       - name: Build Debug APK
-        run: ./gradlew assembleDebug
+        run: |
+          ./gradlew assembleDebug
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: lemuroid-mod-apk
           path: "**/build/outputs/apk/debug/*.apk"
-          
