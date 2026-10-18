@@ -13,7 +13,6 @@ jobs:
       - name: Unzip project files
         run: |
           unzip -q "Cot Launcher.zip"
-          # Переносим файлы из двойной подпапки в корень для правильной сборки
           mv "./Cot Launcher/Cot Launcher/"* . 2>/dev/null || mv "./Cot Launcher/"* . 2>/dev/null || true
           rm -f "Cot Launcher.zip"
 
@@ -29,10 +28,11 @@ jobs:
 
       - name: Build Debug APK
         run: |
-          ./gradlew assembleDebug
+          # Собираем версию opensourceDebug, которая не требует внешних ядер
+          ./gradlew :lemuroid-app:assembleOpensourceDebug
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: lemuroid-mod-apk
-          path: "**/build/outputs/apk/debug/*.apk"
+          path: "**/build/outputs/apk/**/*.apk"
