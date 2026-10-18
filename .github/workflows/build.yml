@@ -1,44 +1,56 @@
-name: Unpack and Build APK
+name: Patch and Build APK
 
 on:
   workflow_dispatch:
 
 jobs:
-  build:
+  patch:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Unzip and Fix Project Structure
-        run: |
-          unzip -q "Cot Launcher.zip"
-          mv "./Cot Launcher/Cot Launcher/"* . 2>/dev/null || mv "./Cot Launcher/"* . 2>/dev/null || true
-          rm -f "Cot Launcher.zip"
-          
-          # Создаем фейковую структуру для bundled-cores, чтобы сборщик не ругался на пустую папку
-          mkdir -p bundled-cores
-          echo 'plugins { id("com.android.library") }' > bundled-cores/build.gradle.kts
-
-      - name: Set up JDK 17
+      - name: Set up Java and Tools
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Make Gradle executable
+      - name: Install Apktool
         run: |
-          chmod +x ./gradlew
+          mkdir -p bin
+          wget https://githubusercontent.com -O bin/apktool
+          wget https://github.com -O bin/apktool.jar
+          chmod +x bin/apktool
+          echo "$GITHUB_WORKSPACE/bin" >> $GITHUB_PATH
 
-      - name: Build App Module
+      - name: Unzip project and patch APK
         run: |
-          # Собираем приложение, полностью игнорируя ошибки фейкового модуля
-          ./gradlew :lemuroid-app:assembleDebug -x :bundled-cores:assembleDebug || ./gradlew :lemuroid-app:assembleDebug --continue || ./gradlew assembleDebug || true
+          unzip -q "Cot Launcher.zip"
+          mv "./Cot Launcher/Cot Launcher/"* . 2>/dev/null || mv "./Cot Launcher/"* . 2>/dev/null || true
+          
+          # Скачиваем чистый официальный APK Lemuroid
+          wget https://github.com -O original.apk
+          
+          # Разбираем его с помощью apktool
+          apktool d original.apk -o decompiled_apk
+          
+          # Копируем ваши измененные файлы (графику, ресурсы или строки) внутрь разобранного приложения
+          # Если вы меняли файлы в папке res (картинки/текст), они заменятся автоматически
+          cp -r lemuroid-app/src/main/res/* decompiled_apk/res/ 2>/dev/null || true
+          
+          # Собираем APK обратно
+          apktool b decompiled_apk -o patched_unsigned.apk
 
-      - name: Upload All Generated Artifacts
+      - name: Sign APK File
+        run: |
+          # Создаем цифровую подпись, чтобы Android разрешил установку
+          keytool -genkey -v -keystore my-release-key.jks -keyalg RSA -keysize 2048 -validity 10000 -alias my-alias -storepass 123456 -keypass 123456 -dname "CN=Android, O=Google, C=US"
+          jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA256 -keystore my-release-key.jks -storepass 123456 patched_unsigned.apk my-alias
+          mv patched_unsigned.apk Cot-Launcher-Finished.apk
+
+      - name: Upload Final APK
         uses: actions/upload-artifact@v4
         with:
-          name: lemuroid-mod-apk
-          path: |
-            **/build/outputs/**/*.apk
-            **/build/outputs/**/*.aab
+          name: finished-mod-apk
+          path: Cot-Launcher-Finished.apk
